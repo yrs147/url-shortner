@@ -3,6 +3,8 @@ package routes
 import (
 	"time"
 
+	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 )
 
 type request struct {
@@ -12,14 +14,34 @@ type request struct {
 }
 
 type response struct {
-	URL         	string         `json:"url"`
-	CustomShort     string         `json:"short"`
-	Expiry      	time.Duration  `json:"expiry"`
-	RateLimit		int			   `json:"rate_limit"`
-	RateLimitReset  time.Duration  `json:"rate_limit_reset"`
+	URL            string        `json:"url"`
+	CustomShort    string        `json:"short"`
+	Expiry         time.Duration `json:"expiry"`
+	RateLimit      int           `json:"rate_limit"`
+	RateLimitReset time.Duration `json:"rate_limit_reset"`
 }
 
+func ShortenURL(c *fiber.Ctx) error {
+	body := new(request)
 
-func main() {
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})		
+	}
 
+	//implement rate limiting
+
+	//check if the input is an actual URL
+
+	if !govalidator.IsURL(body.URL){
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error":"Invalid URL"})
+	}
+	
+	//check for domain error 
+	if !helper.RemoveDomainError(body.URL){
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error":"Unavailiable Error"})
+	}
+
+	//enforce https, SSl
+
+	body.URL := helpers.EnforceHTTP(body.URL)
 }
